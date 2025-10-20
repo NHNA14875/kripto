@@ -1,10 +1,35 @@
-# Python virtual environment
+# Virtual env & cache
 .venv/
 venv/
+env/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
-# Project VideoCrypto Anda (tambahkan file video/data besar jika ada)
-# *.mp4
-# *.avi
-# *.dat
+# Build/output
+build/
+dist/
+*.log
+logs/
+runs/
+outputs/
+*.tmp
+
+# IDE
+.vscode/
+.idea/
+
+# Besar/biner umum (atur sesuai kebutuhan)
+*.mp4
+*.mov
+*.avi
+*.zip
+*.7z
+*.rar
+*.dll
+*.lib
+*.pyd
+*.pt
+*.pth
+*.onnx
