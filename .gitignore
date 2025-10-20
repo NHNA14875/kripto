@@ -1,0 +1,10 @@
+# Python virtual environment
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Project VideoCrypto Anda (tambahkan file video/data besar jika ada)
+# *.mp4
+# *.avi
+# *.dat

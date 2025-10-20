@@ -8,4 +8,4 @@ torchvision==0.16.2
 lpips
 piq==0.7.0
 matplotlib
-pillow
+pillowpip 
