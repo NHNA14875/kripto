@@ -1,0 +1,11 @@
+customtkinter
+pycryptodome
+numpy==1.26.4
+opencv-python-headless
+scikit-image
+torch==2.1.2
+torchvision==0.16.2
+lpips
+piq==0.7.0
+matplotlib
+pillow
