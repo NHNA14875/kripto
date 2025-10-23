@@ -1,4 +1,4 @@
-# app/gui.py - FIXED VERSION dengan proper MUSIQ handling
+# app/gui.py - FIXED VERSION
 import customtkinter as ctk
 from tkinter import filedialog, messagebox, ttk
 import threading
@@ -365,21 +365,13 @@ class App(ctk.CTk):
             except Exception:
                 return 0
 
-        def safe_get_metric(metrics_dict, key, fmt=None):
-            """Safely get metric value with optional formatting"""
-            val = metrics_dict.get(key, '-')
-            if val == '-' or val is None:
+        def safe_fmt(val):
+            """Format nilai dengan aman"""
+            if val is None or val == '-':
                 return '-'
-            if fmt and isinstance(val, (int, float)):
-                return fmt.format(val)
+            if isinstance(val, (int, float)):
+                return f"{val:.2f}"
             return str(val)
-
-        # Debug logging
-        print(f"\n[GUI DEBUG] table_add_rows called")
-        print(f"[GUI DEBUG] noref_orig keys: {list(noref_orig.keys())}")
-        print(f"[GUI DEBUG] noref_dec keys: {list(noref_dec.keys())}")
-        print(f"[GUI DEBUG] noref_orig MUSIQ: {noref_orig.get('MUSIQ', 'KEY NOT FOUND')}")
-        print(f"[GUI DEBUG] noref_dec MUSIQ: {noref_dec.get('MUSIQ', 'KEY NOT FOUND')}")
 
         ent_orig = self.histogram_data.get('orig', {}).get('entropy')
         ent_enc = self.histogram_data.get('enc', {}).get('entropy')
@@ -395,19 +387,14 @@ class App(ctk.CTk):
 
         # Row: Asli
         row_orig = (
-            "Asli", 
-            "-", "-", "-",
-            safe_get_metric(noref_orig, 'MUSIQ', '{:.2f}'),
-            safe_get_metric(noref_orig, 'NRQM', '{:.2f}'),
-            safe_get_metric(noref_orig, 'NIQE', '{:.2f}'),
-            safe_get_metric(noref_orig, 'BRISQUE', '{:.2f}'),
-            safe_get_metric(noref_orig, 'SHARPNESS', '{:.2f}'),
-            ent_fmt(ent_orig), 
-            kb(paths.get("orig")), 
-            "1.0000", 
-            now
+            "Asli", "-", "-", "-",
+            safe_fmt(noref_orig.get('MUSIQ')),
+            safe_fmt(noref_orig.get('NRQM')),
+            safe_fmt(noref_orig.get('NIQE')),
+            safe_fmt(noref_orig.get('BRISQUE')),
+            safe_fmt(noref_orig.get('SHARPNESS')),
+            ent_fmt(ent_orig), kb(paths.get("orig")), "1.0000", now
         )
-        print(f"[GUI DEBUG] Row Asli values: {row_orig}")
         self.metrics_table.insert("", "end", values=row_orig)
 
         # Row: Terenkripsi
@@ -422,45 +409,33 @@ class App(ctk.CTk):
 
         row_enc = (
             "Terenkripsi",
-            enc_display.get('PSNR', 'N/A'), 
-            enc_display.get('SSIM', 'N/A'), 
-            enc_display.get('LPIPS', 'N/A'),
-            enc_display.get('RANDOM', 'N/A'), 
-            "N/A", "N/A", "N/A", "N/A",
-            ent_fmt(ent_enc), 
-            kb(paths.get("enc")) if paths.get("enc") else "-", 
-            ratio_enc, 
-            now
+            enc_display.get('PSNR', 'N/A'), enc_display.get('SSIM', 'N/A'), enc_display.get('LPIPS', 'N/A'),
+            enc_display.get('RANDOM', 'N/A'), "N/A", "N/A", "N/A", "N/A",
+            ent_fmt(ent_enc), kb(paths.get("enc")) if paths.get("enc") else "-", ratio_enc, now
         )
-        print(f"[GUI DEBUG] Row Terenkripsi values: {row_enc}")
         self.metrics_table.insert("", "end", values=row_enc)
 
         # Row: Didekripsi
         psnr = ref.get('PSNR', '-')
         ssim = ref.get('SSIM', '-')
-        lpips = ref.get('LPIPS', '-')
+        lpips_val = ref.get('LPIPS', '-')
 
         if isinstance(psnr, (int, float)):
             psnr = "100.00" if psnr >= 100 else f"{psnr:.2f}"
         if isinstance(ssim, (int, float)):
             ssim = f"{ssim:.6f}"
-        if isinstance(lpips, (int, float)):
-            lpips = f"{lpips:.6f}"
+        if isinstance(lpips_val, (int, float)):
+            lpips_val = f"{lpips_val:.6f}"
 
         row_dec = (
-            "Didekripsi", 
-            psnr, ssim, lpips,
-            safe_get_metric(noref_dec, 'MUSIQ', '{:.2f}'),
-            safe_get_metric(noref_dec, 'NRQM', '{:.2f}'),
-            safe_get_metric(noref_dec, 'NIQE', '{:.2f}'),
-            safe_get_metric(noref_dec, 'BRISQUE', '{:.2f}'),
-            safe_get_metric(noref_dec, 'SHARPNESS', '{:.2f}'),
-            ent_fmt(ent_dec), 
-            kb(paths.get("dec")), 
-            ratio_dec, 
-            now
+            "Didekripsi", psnr, ssim, lpips_val,
+            safe_fmt(noref_dec.get('MUSIQ')),
+            safe_fmt(noref_dec.get('NRQM')),
+            safe_fmt(noref_dec.get('NIQE')),
+            safe_fmt(noref_dec.get('BRISQUE')),
+            safe_fmt(noref_dec.get('SHARPNESS')),
+            ent_fmt(ent_dec), kb(paths.get("dec")), ratio_dec, now
         )
-        print(f"[GUI DEBUG] Row Didekripsi values: {row_dec}")
         self.metrics_table.insert("", "end", values=row_dec)
 
     def _build_right_panel(self):
@@ -812,56 +787,78 @@ class App(ctk.CTk):
             start_time = time.time()
             self.update_status("Menghitung metrik...")
 
+            print("\n" + "="*80)
+            print("STARTING ADVANCED METRICS TEST")
+            print("="*80)
+
             self.set_progress(0.05)
             self.after(0, self.update_video_players)
 
             self.set_progress(0.15)
+            print("\n[Step 1] Computing histograms...")
             self.compute_file_histogram(orig, 'orig')
             if enc:
                 self.compute_file_histogram(enc, 'enc')
             self.compute_file_histogram(dec, 'dec')
             self.after(0, self.update_histogram_display)
+            print("[Step 1] Histograms complete")
 
             enc_metrics = None
             if enc:
                 self.set_progress(0.25)
+                print("\n[Step 2] Computing encrypted file metrics...")
                 enc_metrics = self.compute_encrypted_metrics(enc)
+                print(f"[Step 2] Encrypted metrics: {enc_metrics}")
 
-            self.set_progress(0.5)
+            self.set_progress(0.4)
+            print("\n[Step 3] Computing reference metrics (PSNR, SSIM, LPIPS)...")
             try:
                 ref = compare_videos_advanced(orig, dec)
+                print(f"[Step 3] Reference metrics complete: {ref}")
             except Exception as e:
-                print(f"[Error] Reference metrics failed: {e}")
+                print(f"[Step 3] ERROR: {e}")
+                traceback.print_exc()
                 ref = {"PSNR": "-", "SSIM": "-", "LPIPS": "-"}
 
-            self.set_progress(0.7)
+            self.set_progress(0.6)
+            print("\n[Step 4] Computing no-reference metrics for ORIGINAL video...")
             try:
                 noref_orig = no_reference_metrics(orig)
-                print(f"[GUI] noref_orig result: {noref_orig}")
+                print(f"[Step 4] Original metrics: {noref_orig}")
             except Exception as e:
-                print(f"[Error] No-ref metrics (orig) failed: {e}")
+                print(f"[Step 4] ERROR: {e}")
                 traceback.print_exc()
                 noref_orig = {k: "-" for k in ['SHARPNESS', 'ENTROPY', 'BRISQUE', 'NIQE', 'MUSIQ', 'NRQM']}
 
-            self.set_progress(0.85)
+            self.set_progress(0.8)
+            print("\n[Step 5] Computing no-reference metrics for DECRYPTED video...")
             try:
                 noref_dec = no_reference_metrics(dec)
-                print(f"[GUI] noref_dec result: {noref_dec}")
+                print(f"[Step 5] Decrypted metrics: {noref_dec}")
             except Exception as e:
-                print(f"[Error] No-ref metrics (dec) failed: {e}")
+                print(f"[Step 5] ERROR: {e}")
                 traceback.print_exc()
                 noref_dec = {k: "-" for k in ['SHARPNESS', 'ENTROPY', 'BRISQUE', 'NIQE', 'MUSIQ', 'NRQM']}
 
+            print("\n[Step 6] Populating table...")
             self.table_add_rows(ref, noref_orig, noref_dec, paths, enc_metrics)
 
             self.set_progress(0.95)
+            print("\n[Step 7] Saving summary report...")
             try:
                 save_metrics_summary(ref, noref_orig, noref_dec, paths, out_folder)
+                print("[Step 7] Summary saved successfully")
             except Exception as e:
-                print(f"[Error] Save summary failed: {e}")
+                print(f"[Step 7] ERROR: {e}")
+                traceback.print_exc()
 
             duration = time.time() - start_time
             self.stop_progress()
+            
+            print("\n" + "="*80)
+            print(f"METRICS TEST COMPLETE - Duration: {duration:.2f}s")
+            print("="*80 + "\n")
+            
             messagebox.showinfo(
                 "Selesai",
                 "Uji metrik selesai!\n\n"
